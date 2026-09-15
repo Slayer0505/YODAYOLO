@@ -190,6 +190,15 @@ Then run OpenCode with:
 opencode --model yoda/neutral-reasoner
 ```
 
+### Connecting Antigravity
+
+Antigravity uses the YODA skill (`skills/yoda/SKILL.md`) to route interactions and emit outcome evidence to YODA:
+
+* **Endpoint:** `http://127.0.0.1:8080/v1`
+* **Skill Path:** `~/.gemini/config/skills/yoda/SKILL.md`
+
+Antigravity sessions automatically share the same L0–L4 cognitive state, Heart BIOS safety constraints, and Evidence Bus with OpenCode.
+
 ---
 
 ## Configuration Reference (`.env`)
