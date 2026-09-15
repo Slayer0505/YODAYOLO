@@ -1,0 +1,38 @@
+{
+  "$comment": "Add this provider block to ~/.config/opencode/opencode.json to route OpenCode through YODA Gateway",
+  "provider": {
+    "yoda": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "YODA Gateway",
+      "options": {
+        "baseURL": "http://127.0.0.1:8080/v1"
+      },
+      "models": {
+        "yoda-default": {
+          "name": "YODA Default Engine"
+        },
+        "brain-default": {
+          "name": "YODA Cognitive Default Engine"
+        },
+        "neutral-reasoner": {
+          "name": "Neutral Interchangeable Reasoner"
+        },
+        "gpt-4o": {
+          "name": "OpenAI GPT-4o (via YODA Gateway)"
+        },
+        "claude-3-5-sonnet": {
+          "name": "Anthropic Claude 3.5 Sonnet (via YODA Gateway)"
+        },
+        "gemini-1.5-pro": {
+          "name": "Google Gemini 1.5 Pro (via YODA Gateway)"
+        },
+        "deepseek-chat": {
+          "name": "DeepSeek Chat (via YODA Gateway)"
+        },
+        "qwen2.5:3b": {
+          "name": "Qwen 2.5 3B (via YODA Gateway)"
+        }
+      }
+    }
+  }
+}
