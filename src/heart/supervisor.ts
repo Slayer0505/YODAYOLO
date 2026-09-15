@@ -39,7 +39,7 @@ export class HeartSupervisor {
   public evaluateAction(params: EvaluateActionParams): HeartEvaluation {
     const evaluationId = `heart-eval-${randomUUID()}`;
     const taskContext = params.taskContext || params.context || 'general';
-    const actionText = params.actionText || params.action || '';
+    const actionText = typeof params.actionText === 'string' ? params.actionText : (typeof params.action === 'string' ? params.action : (typeof params.intent === 'string' ? params.intent : String(params.actionText || '')));
     const now = new Date().toISOString();
 
     const activeModalities: HeartModality[] = [];

@@ -167,7 +167,7 @@ export class L2LearningEngine {
     strategyUpdated?: any;
   } {
     const exp = params.experience;
-    const isSuccess = exp.status === 'SUCCESS';
+    const isSuccess = exp.status === 'SUCCESS' || exp.status === 'PARTIAL_SUCCESS';
     const isFailure = exp.status === 'FAILURE';
     const results: any = {};
 

@@ -12,6 +12,7 @@ import type { L4MetaEngine } from '../l4/meta_engine';
 import type { HeartSupervisor } from '../heart/supervisor';
 import type { DreamingConsolidator } from '../consolidation/dreaming';
 import type { CognitiveLoopOrchestrator } from '../orchestrator/cognitive_loop';
+import type { AdapterRegistry } from '../adapters/registry';
 import { handleRequest } from './handlers';
 
 export interface GatewayServerOptions {
@@ -38,6 +39,7 @@ export interface GatewayServerOptions {
   sessionManager?: any;
   replayEngine?: any;
   causalityEngine?: any;
+  adapterRegistry?: AdapterRegistry;
 }
 
 export class GatewayServer {
@@ -64,6 +66,7 @@ export class GatewayServer {
   private sessionManager?: any;
   private replayEngine?: any;
   private causalityEngine?: any;
+  private adapterRegistry?: AdapterRegistry;
   private server: Server<any> | null = null;
 
   constructor(options: GatewayServerOptions) {
@@ -90,6 +93,7 @@ export class GatewayServer {
     this.sessionManager = options.sessionManager;
     this.replayEngine = options.replayEngine;
     this.causalityEngine = options.causalityEngine;
+    this.adapterRegistry = options.adapterRegistry;
 
     if (this.evidenceBus && this.learningEngine) {
       this.evidenceBus.setLearningEngine(this.learningEngine);
@@ -102,12 +106,24 @@ export class GatewayServer {
     }
   }
 
+  private userSelectedModel?: string;
+  private isUserSelected: boolean = false;
+
   public setProvider(provider: ReasoningProvider): void {
     this.provider = provider;
     if (this.cognitiveLoop) {
       this.cognitiveLoop.updateProvider(provider);
     }
     console.log(`[YODA Gateway] Provider hot-swapped to: ${provider.name}`);
+  }
+
+  public setDefaultModel(model: string, userSelected: boolean = true): void {
+    this.defaultModel = model;
+    this.userSelectedModel = model;
+    this.isUserSelected = userSelected;
+    if (this.provider) {
+      this.provider.defaultModel = model;
+    }
   }
 
   public getProvider(): ReasoningProvider {
@@ -130,6 +146,8 @@ export class GatewayServer {
           ledger: self.ledger,
           provider: self.provider,
           defaultModel: self.defaultModel,
+          userSelectedModel: self.userSelectedModel,
+          isUserSelected: self.isUserSelected,
           experienceManager: self.experienceManager,
           evidenceBus: self.evidenceBus,
           contextCompiler: self.contextCompiler,
@@ -148,7 +166,11 @@ export class GatewayServer {
           sessionManager: self.sessionManager,
           replayEngine: self.replayEngine,
           causalityEngine: self.causalityEngine,
-          onSwitchProvider: (p) => self.setProvider(p),
+          adapterRegistry: self.adapterRegistry,
+          onSwitchProvider: (p, model, userSelected) => {
+            self.setProvider(p);
+            if (model) self.setDefaultModel(model, userSelected ?? true);
+          },
         });
       },
     });

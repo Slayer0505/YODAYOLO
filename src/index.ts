@@ -3,10 +3,6 @@ import { EvidenceBus } from './evidence/bus';
 import { GatewayServer } from './gateway/server';
 import { L1ExperienceManager } from './l1/experience';
 import { L3ContextCompiler } from './l3/compiler';
-import { MockL2KnowledgeStore } from './l3/mock_l2';
-import { MockReasoningProvider } from './providers/mock';
-import { OllamaReasoningProvider } from './providers/ollama';
-import { UpstreamHttpProvider } from './providers/upstream';
 import { L2KnowledgeStore } from './l2/store';
 import { ProvenanceService } from './l2/provenance';
 import { L2LearningEngine } from './l2/learning_engine';
@@ -24,51 +20,40 @@ import { SessionManager } from './session/manager';
 import { SessionReplayEngine } from './session/replay';
 import { CausalityEngine } from './causality/engine';
 import { ToolRegistry } from './tools/registry';
+import { UniversalProviderRouter } from './providers/router';
+import { AdapterRegistry } from './adapters/registry';
 import type { ReasoningProvider } from './types';
 
 const PORT = parseInt(process.env.PORT || '8080', 10);
 const HOST = process.env.HOST || '127.0.0.1';
 const DB_PATH = process.env.DB_PATH || 'yoda_l0.db';
-const PROVIDER_TYPE = process.env.PROVIDER_TYPE || 'auto'; // 'auto' | 'ollama' | 'mock' | 'upstream'
-const DEFAULT_MODEL = process.env.DEFAULT_MODEL || process.env.MODEL;
-const UPSTREAM_URL = process.env.UPSTREAM_URL || 'http://127.0.0.1:11434';
+const DEFAULT_MODEL = process.env.DEFAULT_MODEL || process.env.MODEL || 'neutral-reasoner';
+const UPSTREAM_URL = process.env.UPSTREAM_URL;
 const UPSTREAM_KEY = process.env.UPSTREAM_KEY;
+const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+const OPENAI_KEY = process.env.OPENAI_API_KEY;
+const GEMINI_KEY = process.env.GEMINI_API_KEY;
 
-async function selectProvider(defaultModel?: string): Promise<ReasoningProvider> {
-  if (PROVIDER_TYPE === 'mock') {
-    console.log('[Init] Using Mock Reasoning Provider');
-    return new MockReasoningProvider({ name: 'mock-engine', defaultModel });
-  }
+async function createUniversalRouter(defaultModel: string): Promise<UniversalProviderRouter> {
+  const router = new UniversalProviderRouter({
+    defaultModel,
+    upstreamUrl: UPSTREAM_URL,
+    upstreamKey: UPSTREAM_KEY,
+    anthropicKey: ANTHROPIC_KEY,
+    openaiKey: OPENAI_KEY,
+    geminiKey: GEMINI_KEY,
+  });
 
-  if (PROVIDER_TYPE === 'upstream') {
-    console.log(`[Init] Using Upstream HTTP Provider at ${UPSTREAM_URL}`);
-    return new UpstreamHttpProvider({ baseUrl: UPSTREAM_URL, apiKey: UPSTREAM_KEY, defaultModel });
-  }
-
-  if (PROVIDER_TYPE === 'ollama') {
-    console.log(`[Init] Using Ollama Provider at ${UPSTREAM_URL}`);
-    return new OllamaReasoningProvider(UPSTREAM_URL, defaultModel);
-  }
-
-  // Auto-detection: Ollama is an interchangeable reasoning provider, not the YODA system itself
-  const ollama = new OllamaReasoningProvider(UPSTREAM_URL, defaultModel);
-  const isOllamaUp = await ollama.healthCheck().catch(() => false);
-  if (isOllamaUp) {
-    console.log(`[Init] Detected live Ollama endpoint at ${UPSTREAM_URL} as interchangeable provider.`);
-    return ollama;
-  }
-
-  console.log('[Init] No live upstream detected; using local Mock Reasoning Provider for local operations.');
-  return new MockReasoningProvider({ name: 'yoda-mock-engine', defaultModel });
+  console.log(`[Init] Universal Provider Router online (Providers: ${router.getAllProviders().map(p => p.name).join(', ')})`);
+  return router;
 }
 
 async function main() {
   console.log('================================================================');
-  console.log('       YODA — PERSISTENT COGNITIVE OPERATING SYSTEM             ');
-  console.log('       OpenCode Compatible Local Service                         ');
+  console.log('       YODA — UNIVERSAL PERSISTENT COGNITIVE OPERATING SYSTEM   ');
+  console.log('       Model-Independent • Agent-Independent • Plug-and-Play    ');
   console.log('   [L0] + [L1] + [L2] + [L3] + [L4 Meta-Learning] + [Heart BIOS] ');
-  console.log('   [Dual-Cortex] + [Live Session Capture] + [Causality Engine]   ');
-  console.log('   [Tool Registry] + [Dream Scheduler] + [Beads-Lite Continuity] ');
+  console.log('   [Universal Adapters] + [Evidence Bus] + [Dual-Cortex Engine] ');
   console.log('================================================================');
 
   const ledger = new L0EventLedger(DB_PATH);
@@ -103,10 +88,10 @@ async function main() {
   const provenanceService = new ProvenanceService(l2Store, experienceManager, ledger);
   const learningEngine = new L2LearningEngine(l2Store);
 
-  // Initialize Hybrid Semantic Embedder (Ollama nomic-embed-text + Local Fallback)
+  // Initialize Hybrid Semantic Embedder
   const embedder = new HybridSemanticEmbedder({ baseUrl: UPSTREAM_URL });
   
-  // Initialize Codebase Cortex (ADR-020 Graft Integration)
+  // Initialize Codebase Cortex
   const cortex = new CodebaseCortex({ rootDir: process.cwd() });
   cortex.refreshIfStale();
   console.log(`[Init] Codebase Cortex online (${cortex.computeFingerprint().filePaths.length} source files indexed).`);
@@ -144,7 +129,7 @@ async function main() {
     l4MetaEngine: metaEngine,
   });
 
-  // Initialize Dream Scheduler (periodic background consolidation)
+  // Initialize Dream Scheduler
   const dreamScheduler = new DreamScheduler(consolidator, ledger, {
     intervalMs: 60000,
     idleThresholdMs: 30000,
@@ -154,7 +139,19 @@ async function main() {
   evidenceBus.setDreamScheduler(dreamScheduler);
   console.log(`[Init] Dreaming Consolidation & Background Scheduler online.`);
 
-  const provider = await selectProvider(DEFAULT_MODEL);
+  // Initialize Universal Multi-Provider Router
+  const provider = await createUniversalRouter(DEFAULT_MODEL);
+
+  // Initialize Universal Client Adapter Registry
+  const adapterRegistry = new AdapterRegistry({
+    ledger,
+    evidenceBus,
+    experienceManager,
+    contextCompiler,
+    heartSupervisor,
+  });
+  console.log(`[Init] Universal AI Adapter Registry online (${adapterRegistry.getAllAdapters().length} standard adapters registered).`);
+
   const cognitiveLoop = new CognitiveLoopOrchestrator({
     l0Ledger: ledger,
     l1Manager: experienceManager,
@@ -175,7 +172,7 @@ async function main() {
     hostname: HOST,
     ledger,
     provider,
-    defaultModel: DEFAULT_MODEL || provider.defaultModel || 'neutral-reasoner',
+    defaultModel: DEFAULT_MODEL,
     experienceManager,
     evidenceBus,
     contextCompiler,
@@ -194,6 +191,7 @@ async function main() {
     sessionManager,
     replayEngine,
     causalityEngine,
+    adapterRegistry,
   });
 
   gateway.start();

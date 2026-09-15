@@ -1,6 +1,7 @@
 import { Database } from 'bun:sqlite';
 import { createHash, randomUUID } from 'crypto';
 import type { L0Actor, L0Event, L0EventType } from '../types';
+import { PrivacyRedactor } from '../session/privacy';
 
 export function canonicalJsonStringify(obj: unknown): string {
   if (obj === null || typeof obj !== 'object') {
@@ -37,12 +38,14 @@ export interface AppendEventParams {
 export class L0EventLedger {
   private db: Database;
   private insertStmt: ReturnType<Database['prepare']>;
+  private redactor: PrivacyRedactor;
 
   public getDatabase(): Database {
     return this.db;
   }
 
   constructor(dbOrPath: string | Database = 'original_brain_l0.db') {
+    this.redactor = new PrivacyRedactor();
     if (typeof dbOrPath === 'string') {
       this.db = new Database(dbOrPath, { create: true });
       this.db.exec('PRAGMA journal_mode = WAL;');
@@ -94,9 +97,11 @@ export class L0EventLedger {
   public appendEvent(params: AppendEventParams | any): L0Event {
     const now = new Date();
     const eventId = params.eventId || params.event_id || randomUUID();
-    const contentHash = computeContentHash(params.payload);
-    const payloadStr = canonicalJsonStringify(params.payload);
-    const metadataStr = params.metadata ? canonicalJsonStringify(params.metadata) : null;
+    const sanitizedPayload = this.redactor.redactObject(params.payload);
+    const contentHash = computeContentHash(sanitizedPayload);
+    const payloadStr = canonicalJsonStringify(sanitizedPayload);
+    const sanitizedMetadata = params.metadata ? this.redactor.redactObject(params.metadata) : null;
+    const metadataStr = sanitizedMetadata ? canonicalJsonStringify(sanitizedMetadata) : null;
     const projectId = params.projectId || params.project_id || 'default';
     const parentEventId = params.parentEventId ?? params.parent_event_id ?? null;
     const sessionId = params.sessionId ?? params.session_id ?? null;
@@ -115,8 +120,8 @@ export class L0EventLedger {
       timestamp_epoch_ms: now.getTime(),
       schema_version: 1,
       content_hash: contentHash,
-      payload: typeof params.payload === 'string' ? params.payload : (params.payload as Record<string, unknown>),
-      metadata: params.metadata || null,
+      payload: typeof sanitizedPayload === 'string' ? sanitizedPayload : (sanitizedPayload as Record<string, unknown>),
+      metadata: sanitizedMetadata as Record<string, unknown> | null,
     };
 
     this.insertStmt.run({

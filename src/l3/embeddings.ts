@@ -150,9 +150,10 @@ export class HybridSemanticEmbedder implements EmbeddingEngine {
   private preferOllama: boolean;
 
   constructor(options: { baseUrl?: string; model?: string; preferOllama?: boolean } = {}) {
-    this.ollama = new OllamaEmbedder(options.baseUrl, options.model || 'nomic-embed-text');
+    const hasUrl = Boolean(options.baseUrl && options.baseUrl.trim().length > 0);
+    this.ollama = new OllamaEmbedder(options.baseUrl || 'http://127.0.0.1:11434', options.model || 'nomic-embed-text');
     this.local = new DeterministicLocalEmbedder();
-    this.preferOllama = options.preferOllama ?? true;
+    this.preferOllama = hasUrl ? (options.preferOllama ?? true) : false;
   }
 
   public async checkHealth(): Promise<{ usingOllama: boolean; model: string; available: boolean }> {
@@ -167,7 +168,7 @@ export class HybridSemanticEmbedder implements EmbeddingEngine {
     };
   }
 
-  public async embed(text: string, timeoutMs: number = 500): Promise<number[]> {
+  public async embed(text: string, timeoutMs: number = 300): Promise<number[]> {
     if (!this.preferOllama) {
       return this.local.embedSync(text);
     }

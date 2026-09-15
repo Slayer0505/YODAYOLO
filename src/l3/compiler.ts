@@ -103,8 +103,12 @@ export class L3ContextCompiler {
         }
 
         const sim = cosineSimilarity(queryVector, ruleVector);
-        if (sim >= minSim) {
-          scored.push({ rule, score: sim });
+        let effectiveScore = sim;
+        if (rule.task_context && projectId && rule.task_context.toLowerCase() === projectId.toLowerCase() && projectId !== 'default') {
+          effectiveScore += 0.30;
+        }
+        if (effectiveScore >= minSim) {
+          scored.push({ rule, score: effectiveScore });
         }
       }
 

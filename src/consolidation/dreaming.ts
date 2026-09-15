@@ -75,7 +75,7 @@ export class DreamingConsolidator {
 
       // Repeated Success -> Corroboration & Hypothesis Promotion
       if (successfulExps.length >= 2) {
-        const matchingRules = this.l2Store.getAllRules({ context: clusterKey });
+        const matchingRules = this.l2Store.getAllRules({ taskContext: clusterKey });
         for (const rule of matchingRules) {
           if (rule.status === 'HYPOTHESIS') {
             // Check if we have corroborated evidence across independent experiences
@@ -124,7 +124,7 @@ export class DreamingConsolidator {
 
       // Repeated Failure -> Contradiction Detection & Bayesian Decay
       if (failedExps.length > 0) {
-        const matchingRules = this.l2Store.getAllRules({ context: clusterKey });
+        const matchingRules = this.l2Store.getAllRules({ taskContext: clusterKey });
         for (const rule of matchingRules) {
           // If experience failed while using this rule, apply confidence decay
           if (rule.status !== 'DEPRECATED') {
