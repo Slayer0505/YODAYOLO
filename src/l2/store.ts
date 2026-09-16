@@ -228,6 +228,33 @@ export class L2KnowledgeStore {
     return this.getRule(ruleId);
   }
 
+  public mergeRules(sourceRuleId: string, targetRuleId: string): L2KnowledgeItem | null {
+    const source = this.getRule(sourceRuleId);
+    const target = this.getRule(targetRuleId);
+    if (!source || !target) return null;
+
+    // Combine provenances deduplicated
+    const combinedProv = Array.from(new Set([...source.provenance, ...target.provenance]));
+    const newConf = Math.min(0.99, Math.max(source.confidence, target.confidence) + 0.02);
+    const newEvidenceCount = (source.evidence_count || 1) + (target.evidence_count || 1);
+
+    this.db.prepare(`
+      UPDATE l2_knowledge 
+      SET provenance = ?, confidence = ?, evidence_count = ?, updated_at = datetime('now')
+      WHERE rule_id = ?
+    `).run(JSON.stringify(combinedProv), newConf, newEvidenceCount, targetRuleId);
+
+    // Deprecate source and link supersededBy
+    this.db.prepare(`
+      UPDATE l2_knowledge 
+      SET status = 'DEPRECATED', superseded_by = ?, updated_at = datetime('now')
+      WHERE rule_id = ?
+    `).run(targetRuleId, sourceRuleId);
+
+    return this.getRule(targetRuleId);
+  }
+
+
   public getAllRules(filter?: { status?: L2RuleStatus; category?: string; taskContext?: string }): L2KnowledgeItem[] {
     let sql = 'SELECT * FROM l2_knowledge WHERE 1=1';
     const params: any[] = [];

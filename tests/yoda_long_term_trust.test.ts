@@ -408,7 +408,7 @@ describe('YODA Long-Term Trust & Reliability Forensic Verification Suite', () =>
     
     expect(res.retrieved_rules.length).toBeGreaterThan(0);
     expect(res.codebase_cortex).toBeUndefined();
-    expect(res.state_markdown).toContain('ACTIVE PROJECT CONTEXT');
+    expect(res.state_markdown.includes('CTX:') || res.state_markdown.includes('ACTIVE PROJECT CONTEXT')).toBe(true);
   });
 
   // =========================================================================

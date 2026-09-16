@@ -104,8 +104,13 @@ export class L3ContextCompiler {
 
         const sim = cosineSimilarity(queryVector, ruleVector);
         let effectiveScore = sim;
-        if (rule.task_context && projectId && rule.task_context.toLowerCase() === projectId.toLowerCase() && projectId !== 'default') {
-          effectiveScore += 0.30;
+        // Project Scoping Boost: prioritize current project context
+        if (rule.task_context && projectId && projectId !== 'default') {
+          if (rule.task_context.toLowerCase() === projectId.toLowerCase()) {
+            effectiveScore += 0.35; // direct workspace match
+          } else if (rule.task_context.toLowerCase() !== 'global' && rule.task_context.toLowerCase() !== 'aathma-import' && rule.task_context.toLowerCase() !== 'architecture') {
+            effectiveScore -= 0.15; // penalize mismatching foreign project rules
+          }
         }
         if (effectiveScore >= minSim) {
           scored.push({ rule, score: effectiveScore });

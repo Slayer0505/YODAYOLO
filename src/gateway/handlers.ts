@@ -312,6 +312,20 @@ export async function handleRequest(
     return Response.json({ ok: true, rule: updated });
   }
 
+  // POST /api/l2/rules/merge — consolidate two rules into one
+  if (path === '/api/l2/rules/merge' && method === 'POST') {
+    const body = await req.json().catch(() => ({}));
+    const { sourceRuleId, targetRuleId } = body;
+    if (!sourceRuleId || !targetRuleId) {
+      return Response.json({ error: 'sourceRuleId and targetRuleId are required' }, { status: 400 });
+    }
+    const merged = ctx.l2Store?.mergeRules?.(sourceRuleId, targetRuleId);
+    if (!merged) {
+      return Response.json({ error: 'Could not merge rules. Verify both rule IDs exist.' }, { status: 404 });
+    }
+    return Response.json({ ok: true, merged_rule: merged });
+  }
+
   if (path === '/api/l2/strategies' && method === 'GET') {
     const taskClass = url.searchParams.get('task_class');
     const strats = taskClass

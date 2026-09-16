@@ -91,10 +91,9 @@ async function main() {
   // Initialize Hybrid Semantic Embedder
   const embedder = new HybridSemanticEmbedder({ baseUrl: UPSTREAM_URL });
   
-  // Initialize Codebase Cortex
+  // Initialize Codebase Cortex (Lazy loading on demand to save CPU & RAM on boot)
   const cortex = new CodebaseCortex({ rootDir: process.cwd() });
-  cortex.refreshIfStale();
-  console.log(`[Init] Codebase Cortex online (${cortex.computeFingerprint().filePaths.length} source files indexed).`);
+  console.log(`[Init] Codebase Cortex initialized in lazy mode.`);
 
   // Initialize Beads-Lite (Cross-Agent Task Continuity)
   const beadsManager = new BeadsLiteManager(ledger.getDatabase(), ledger);
@@ -201,7 +200,7 @@ async function main() {
   syncAllClientTranscripts({ verbose: false }).catch(() => {});
   const syncInterval = setInterval(() => {
     syncAllClientTranscripts({ verbose: false }).catch(() => {});
-  }, 15000);
+  }, 60000); // sync every 60s (was 15s) — reduces I/O overhead
 
   const shutdown = () => {
     console.log('\n[Shutdown] Shutting down YODA Gateway...');
