@@ -9,7 +9,7 @@ import type { L3ContextCompiler } from '../l3/compiler';
 import { BrainContextEnvelope } from '../l3/envelope';
 import type { L4MetaEngine } from '../l4/meta_engine';
 import type { L4Store } from '../l4/store';
-import type { Provider } from '../providers/provider';
+import type { ReasoningProvider } from '../types';
 import type { ToolRegistry } from '../tools/registry';
 import type {
   CognitiveLoopExecutionResult,
@@ -33,7 +33,7 @@ export interface CognitiveLoopOrchestratorOptions {
   l4MetaEngine: L4MetaEngine;
   heartSupervisor: HeartSupervisor;
   evidenceBus: EvidenceBus;
-  provider: Provider;
+  provider: ReasoningProvider;
   toolRegistry?: ToolRegistry;
 }
 
@@ -67,7 +67,7 @@ export class CognitiveLoopOrchestrator {
   private l4MetaEngine: L4MetaEngine;
   private heartSupervisor: HeartSupervisor;
   private evidenceBus: EvidenceBus;
-  public provider: Provider;
+  public provider: ReasoningProvider;
   public toolRegistry?: ToolRegistry;
 
   constructor(options: CognitiveLoopOrchestratorOptions) {
@@ -84,7 +84,7 @@ export class CognitiveLoopOrchestrator {
     this.toolRegistry = options.toolRegistry;
   }
 
-  public updateProvider(provider: Provider): void {
+  public updateProvider(provider: ReasoningProvider): void {
     this.provider = provider;
   }
 
@@ -345,7 +345,7 @@ export class CognitiveLoopOrchestrator {
       );
     }
 
-    const updatedReliability = this.l4MetaEngine.evaluateContextualReliability(taskContext, model);
+    const updatedReliability = this.l4MetaEngine.evaluateContextualReliability(taskContext, { model });
 
     stagesExecuted.push('NEXT_L3_ADAPTATION');
     const nextL3Preview = await this.l3Compiler.compile(params.userPrompt, 'default', { modelName: model });

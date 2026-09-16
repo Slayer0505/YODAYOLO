@@ -1,6 +1,6 @@
 import { Database } from 'bun:sqlite';
 import { randomUUID } from 'crypto';
-import type { L0Actor, L0Event, L0EventType } from '../types';
+import type { L0Actor, L0Event, L0EventType, EvidenceSource, EvidenceType } from '../types';
 import type { L0EventLedger } from '../db/ledger';
 import type { EvidenceBus } from '../evidence/bus';
 import { PrivacyRedactor } from './privacy';
@@ -291,7 +291,7 @@ export class SessionManager {
     let l0Actor: L0Actor = 'system';
     if (input.actor === 'human') l0Actor = 'user';
     else if (input.actor === 'agent') l0Actor = 'provider';
-    else if (input.source === 'tool' || input.source === 'git' || input.source === 'filesystem') l0Actor = 'tool';
+    else if ((input.source as string) === 'tool' || input.source === 'git' || input.source === 'filesystem') l0Actor = 'tool';
 
     // 3. Append to immutable L0 Raw Ledger
     const l0Event = this.ledger.appendEvent({
@@ -340,8 +340,8 @@ export class SessionManager {
     if (this.evidenceBus) {
       this.evidenceBus.ingestSignal({
         signal_id: `sig-${randomUUID()}`,
-        source: input.source,
-        type: input.eventType,
+        source: input.source as EvidenceSource,
+        type: input.eventType as EvidenceType,
         correlation_id: correlationId,
         project_id: projectId,
         files: (input.metadata?.files as string[]) || [],

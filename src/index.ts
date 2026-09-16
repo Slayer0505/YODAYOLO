@@ -196,8 +196,16 @@ async function main() {
 
   gateway.start();
 
+  // Automatic Background Unified Transcript Syncer (Antigravity + OpenCode)
+  const { syncAllClientTranscripts } = await import('./adapters/transcript_syncer');
+  syncAllClientTranscripts({ verbose: false }).catch(() => {});
+  const syncInterval = setInterval(() => {
+    syncAllClientTranscripts({ verbose: false }).catch(() => {});
+  }, 15000);
+
   const shutdown = () => {
     console.log('\n[Shutdown] Shutting down YODA Gateway...');
+    clearInterval(syncInterval);
     dreamScheduler.stop();
     gateway.stop();
     ledger.close();

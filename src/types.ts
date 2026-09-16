@@ -6,9 +6,13 @@ export type L0EventType =
   | 'provider_error'
   | 'timeout'
   | 'system_error'
-  | 'evidence_ingested';
+  | 'evidence_ingested'
+  | 'user_correction'
+  | 'human_override'
+  | 'tool_error'
+  | 'test_fail';
 
-export type L0Actor = 'client' | 'gateway' | 'provider' | 'system';
+export type L0Actor = 'client' | 'gateway' | 'provider' | 'system' | 'user' | 'tool' | 'human' | 'agent';
 
 export interface L0Event {
   event_id: string;
@@ -74,7 +78,7 @@ export interface L1Experience {
 // PHASE 2: EVIDENCE BUS TYPES
 // ----------------------------------------------------------------------------
 
-export type EvidenceSource = 'test' | 'git' | 'compiler' | 'terminal' | 'user' | 'tool';
+export type EvidenceSource = 'test' | 'git' | 'compiler' | 'terminal' | 'user' | 'tool' | 'agent' | 'filesystem';
 
 export type EvidenceType =
   | 'test_pass'
@@ -85,7 +89,8 @@ export type EvidenceType =
   | 'user_accept'
   | 'user_reject'
   | 'user_correction'
-  | 'tool_result';
+  | 'tool_result'
+  | string;
 
 export interface EvidenceSignal {
   signal_id: string;
@@ -102,7 +107,14 @@ export interface EvidenceSignal {
 // PHASE 3: L2 LEARNED KNOWLEDGE & PROVENANCE TYPES
 // ----------------------------------------------------------------------------
 
-export type L2RuleCategory = 'user_preference' | 'project_constraint' | 'learned_rule' | 'project_fact';
+export type L2RuleCategory =
+  | 'user_preference'
+  | 'project_constraint'
+  | 'learned_rule'
+  | 'project_fact'
+  | 'architecture_constraint'
+  | 'testing_gate'
+  | 'workflow_rule';
 export type L2RuleStatus = 'HYPOTHESIS' | 'CONFIRMED' | 'DEPRECATED';
 
 export type TemporalRelation =
@@ -196,7 +208,9 @@ export interface BeliefProvenanceExplanation {
 export interface CodebaseCortexExcerpt {
   filePath: string;
   symbolName: string;
-  kind: 'function' | 'class' | 'interface' | 'type' | 'export' | 'variable';
+  kind: 'function' | 'class' | 'interface' | 'type' | 'export' | 'variable' | 'graft_markdown_graph' | string;
+  line?: number;
+  snippet?: string;
   signature?: string;
   cruxCode?: string;
   dependencies?: string[];
@@ -204,12 +218,14 @@ export interface CodebaseCortexExcerpt {
 }
 
 export interface CodebaseCortexContext {
-  workingDirectory: string;
+  workingDirectory?: string;
   fingerprint: string;
-  indexedFilesCount: number;
-  totalSymbolsCount: number;
+  indexedFilesCount?: number;
+  filesIndexed?: number;
+  totalSymbolsCount?: number;
+  totalSymbols?: number;
   relevantExcerpts: CodebaseCortexExcerpt[];
-  fileWiringSummary: string[];
+  fileWiringSummary: string | string[];
 }
 
 export interface L3TokenBudgetInfo {

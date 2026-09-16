@@ -154,7 +154,7 @@ export class L2KnowledgeStore {
     const validUntil = params.validUntil ?? null;
     const supersededBy = params.supersededBy ?? null;
     const temporalEdges = params.temporalEdges || [];
-    const vector = this.embedder.embedSync(params.content);
+    const vector = this.embedder ? (this.embedder as any).embedSync(params.content) : null;
 
     this.db
       .prepare(`

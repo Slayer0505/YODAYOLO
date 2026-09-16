@@ -197,7 +197,7 @@ export class HeartSupervisor {
       pushback_reasons: pushbackReasons,
       warnings,
       curiosity_inquiries: curiosityInquiries,
-      requires_human_confirmation: !isOverridden && verificationIntensity === 'MANDATORY_HUMAN_CONFIRMATION',
+      requires_human_confirmation: !isOverridden && (verificationIntensity as string) === 'MANDATORY_HUMAN_CONFIRMATION',
       user_override_granted: isOverridden,
       rationale,
       evaluated_at: now,

@@ -162,7 +162,7 @@ export class DreamingConsolidator {
       for (const pred of pendingPredictions) {
         // Look for corresponding settled L1 experience
         const matchedExp = experiences.find(
-          (e) => (e.correlation_id === pred.context || e.experience_id === pred.context) &&
+          (e) => (e.correlation_id === pred.correlation_id || e.experience_id === pred.experience_id || e.correlation_id === pred.task_context) &&
                  (e.status === 'SUCCESS' || e.status === 'FAILURE' || e.status === 'PARTIAL_SUCCESS')
         );
 
