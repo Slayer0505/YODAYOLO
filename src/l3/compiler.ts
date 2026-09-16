@@ -64,12 +64,12 @@ export class L3ContextCompiler {
     options: CompilerOptions = {}
   ): Promise<L3CompiledContext> {
     const startMs = performance.now();
-    const topK = options.topK ?? 3;
-    const minSim = options.minSimilarity ?? 0.12;
+    const topK = options.topK ?? 2;
+    const minSim = options.minSimilarity ?? 0.25;  // raised: filter low-signal rules
     const failOpen = options.failOpenOnError ?? true;
     const includeCold = options.includeCold ?? false;
-    const maxBudget = options.maxTokenBudget ?? 1500;
-    const includeCortex = options.includeCodebaseCortex ?? true;
+    const maxBudget = options.maxTokenBudget ?? 300;  // ~5% of typical context
+    const includeCortex = options.includeCodebaseCortex ?? false;  // off by default
 
     try {
       // 1. Preprocess & Local/Ollama Hybrid Embedding
@@ -219,22 +219,16 @@ export class L3ContextCompiler {
     if (rules.length === 0) {
       lines.push(`### ACTIVE PROJECT CONTEXT\n- Project ID: ${projectId}\n- No active historical constraints triggered.`);
     } else {
-      lines.push(
-        `### ACTIVE PROJECT CONTEXT (${projectId})`,
-        `The following learned preferences and constraints are active for this task:`
-      );
+      lines.push(`### CTX:${projectId}`);
 
       const strategyMap = new Map<string, any>();
 
       for (const rule of rules) {
         const confPercent = Math.round(rule.confidence * 100);
-        const categoryLabel =
-          rule.category === 'user_preference'
-            ? 'PREFERENCE'
-            : rule.category === 'project_constraint'
-            ? 'CONSTRAINT'
-            : 'PROCEDURE';
-        lines.push(`- [${categoryLabel} | Confidence ${confPercent}%]: ${rule.content}`);
+        const cat = rule.category === 'user_preference' ? 'PREF' : rule.category === 'project_constraint' ? 'CONST' : 'RULE';
+        const content = rule.content.replace(/\n/g, ' ').substring(0, 120);
+        const truncated = rule.content.length > 120 ? '…' : '';
+        lines.push(`- [${cat}|${confPercent}%] ${content}${truncated}`);
 
         if (this.l2Store.getStrategiesByTaskClass && rule.task_context) {
           const found = this.l2Store.getStrategiesByTaskClass(rule.task_context);

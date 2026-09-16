@@ -214,6 +214,20 @@ export class L2KnowledgeStore {
     return this.mapRuleRow(row);
   }
 
+  public patchRule(ruleId: string, patch: { status?: string; confidence?: number; content?: string }): L2KnowledgeItem | null {
+    const current = this.getRule(ruleId);
+    if (!current) return null;
+    const fields: string[] = [];
+    const params: any[] = [];
+    if (patch.status) { fields.push('status = ?'); params.push(patch.status); }
+    if (patch.confidence !== undefined) { fields.push('confidence = ?'); params.push(patch.confidence); }
+    if (patch.content) { fields.push('content = ?'); params.push(patch.content); }
+    if (fields.length === 0) return current;
+    params.push(ruleId);
+    this.db.prepare(`UPDATE l2_knowledge SET ${fields.join(', ')}, updated_at = datetime('now') WHERE rule_id = ?`).run(...params);
+    return this.getRule(ruleId);
+  }
+
   public getAllRules(filter?: { status?: L2RuleStatus; category?: string; taskContext?: string }): L2KnowledgeItem[] {
     let sql = 'SELECT * FROM l2_knowledge WHERE 1=1';
     const params: any[] = [];

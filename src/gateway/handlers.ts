@@ -301,6 +301,17 @@ export async function handleRequest(
     return Response.json(rule);
   }
 
+  // PATCH /api/l2/rules/:id — update status or confidence
+  if (path.startsWith('/api/l2/rules/') && method === 'PATCH' && !path.endsWith('/provenance') && !path.endsWith('/graph')) {
+    const ruleId = path.replace('/api/l2/rules/', '');
+    const body = await req.json().catch(() => ({}));
+    const updated = ctx.l2Store?.patchRule?.(ruleId, body);
+    if (!updated) {
+      return Response.json({ error: `Rule ${ruleId} not found or store does not support PATCH` }, { status: 404 });
+    }
+    return Response.json({ ok: true, rule: updated });
+  }
+
   if (path === '/api/l2/strategies' && method === 'GET') {
     const taskClass = url.searchParams.get('task_class');
     const strats = taskClass
